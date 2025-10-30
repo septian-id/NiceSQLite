@@ -16,6 +16,7 @@ Kelas ini menyediakan antarmuka yang bersih dan intuitif untuk operasi database 
 *   **Antarmuka CRUD Sederhana**: Metode intuitif seperti `insert()`, `select()`, `update()`, dan `delete()`.
 *   **Aman Secara Default**: Menggunakan **Prepared Statements** secara internal untuk semua operasi data, memberikan perlindungan kuat terhadap SQL Injection.
 *   **Pembuatan Direktori Otomatis**: Secara otomatis membuat direktori database jika belum ada.
+*   **Generator ID Unik**: Termasuk metode `getUniqueId()` untuk membuat ID acak yang mudah dibaca, cocok untuk referensi publik.
 *   **Fleksibilitas Query Kustom**: Metode `fetchAll()` dan `fetchOne()` untuk menjalankan query SQL yang lebih kompleks seperti `JOIN`.
 *   **Helper Keamanan**: Termasuk metode `validateColumn()` untuk melakukan *whitelisting* nama kolom, mencegah SQL Injection pada klausa `ORDER BY`.
 *   **Penanganan Error**: Menggunakan `PDOException` dan mencatat error ke log server tanpa membocorkan informasi sensitif ke pengguna.
@@ -50,23 +51,26 @@ $db = new NiceSQLite('database/aplikasi_saya.sqlite');
 $db->exec("
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL UNIQUE,
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE
     )
 ");
 
-// 3. Menyisipkan data baru menggunakan insert()
+// 3. Menyisipkan data baru menggunakan insert() dan getUniqueId()
 echo "Menyisipkan data baru...\n";
 $newUserId = $db->insert('users', [
+    'user_id' => $db->getUniqueId(8), // Membuat ID publik yang unik
     'name' => 'Budi Santoso',
     'email' => 'budi.s@example.com'
 ]);
+
 if ($newUserId) {
-    echo "Berhasil menyisipkan user dengan ID: " . $newUserId . "\n";
+    echo "Berhasil menyisipkan user dengan primary key ID: " . $newUserId . "\n";
 }
 
 // 4. Membaca data menggunakan select()
-// Ambil user berdasarkan ID
+// Ambil user berdasarkan primary key ID
 echo "\nMengambil user dengan ID " . $newUserId . "...\n";
 $user = $db->select('users', $newUserId);
 print_r($user);
@@ -101,18 +105,30 @@ if ($deletedRows > 0) {
 Membuat koneksi ke database.
 *   `$dbPath`: Path ke file `.sqlite` Anda.
 
+### `getUniqueId(int $length = 10)`
+Menghasilkan ID string yang unik dan acak, cocok untuk ID publik atau referensi yang mudah dibaca.
+*   `$length`: Panjang ID yang diinginkan (default: 10).
+*   **Mengembalikan**: Sebuah string ID unik yang dihasilkan.
+
+```php
+$new_ref = $db->getUniqueId(8); // Menghasilkan sesuatu seperti 'N5P8YJ2A'
+$db->insert('users', [
+    'user_id' => $new_ref,
+    'name' => 'Andi'
+]);
+```
 ### `insert(string $table, array $data)`
 Menyisipkan satu baris data ke dalam tabel.
 *   `$table`: Nama tabel.
 *   `$data`: Array asosiatif `['kolom' => 'nilai']`.
-*   **Mengembalikan**: ID dari baris yang baru dibuat, atau `false` jika gagal.
+*   **Mengembalikan**: ID dari baris yang baru dibuat (`lastInsertId`), atau `false` jika gagal.
 
 ### `select(string $table, $condition = null)`
 Mengambil data dari tabel dengan berbagai kondisi.
 *   `$table`: Nama tabel.
 *   `$condition`:
     *   `null` (default): Mengambil semua baris dari tabel.
-    *   `integer`: Mengambil satu baris berdasarkan `id`.
+    *   `integer`: Mengambil satu baris berdasarkan `id` (primary key).
     *   `array`: Mengambil baris yang cocok dengan kriteria `['kolom' => 'nilai', ...]`.
 *   **Mengembalikan**: Sebuah array hasil, atau `false` jika pencarian berdasarkan ID tidak ditemukan.
 
@@ -225,5 +241,4 @@ if ($note && $note['user_id'] === $_SESSION['user_id']) {
 
 ## Lisensi
 
-Proyek ini dilisensikan di bawah Lisensi MIT. Lihat file `LICENSE` untuk detailnya.
-
+Proyek ini dilisensikan di bawah Lisensi MIT.
