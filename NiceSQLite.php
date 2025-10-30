@@ -53,12 +53,29 @@ class NiceSQLite
     }
 
     /**
+	* Menghasilkan ID unik secara acak.
+	*
+	* @param int $length Panjang ID yang diinginkan.
+	* @return string ID unik yang dihasilkan.
+	*/
+    public function getUniqueId($length=10){
+        $characters = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        }
+        return $randomString;
+	}
+
+    /**
      * Menyisipkan data baru ke dalam sebuah tabel.
      *
      * @param string $table Nama tabel.
      * @param array $data Data yang akan disisipkan dalam bentuk associative array [kolom => nilai].
      * @return string|false ID dari baris yang baru disisipkan, atau false jika gagal.
      */
+    
     public function insert(string $table, array $data)
     {
         if (empty($data)) {
